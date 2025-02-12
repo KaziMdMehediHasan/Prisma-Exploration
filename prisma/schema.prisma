@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// user role
+enum UserRole {
+  user
+  admin
+}
+
+// model creation: fieldName, valueType, @id means PKey, then other parameters 
+
+model Post {
+  id           Int            @id @default(autoincrement())
+  title        String
+  content      String
+  published    Boolean        @default(false)
+  // setting optional author name
+  authorId     Int
+  author       User           @relation(fields: [authorId], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  postCategory PostCategory[]
+
+  @@map("posts")
+}
+
+// user model
+
+model User {
+  id       Int      @id @default(autoincrement())
+  username String   @unique
+  email    String
+  role     UserRole @default(user)
+  profile  Profile? //one to one relation
+  post     Post[] //one to many relation
+
+  @@map("users")
+}
+
+model Profile {
+  id     Int     @id @default(autoincrement())
+  bio    String?
+  userId Int     @unique
+  // creating relation
+  user   User    @relation(fields: [userId], references: [id])
+
+  @@map("profiles")
+}
+
+model Category {
+  id           Int            @id @default(autoincrement())
+  name         String
+  postCategory PostCategory[]
+
+  @@map("categories")
+}
+
+model PostCategory {
+  postId     Int
+  post       Post     @relation(fields: [postId], references: [id])
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  // creating composite key
+  @@id([postId, categoryId])
+  // renaming the table name
+  @@map("post_categories")
+}
